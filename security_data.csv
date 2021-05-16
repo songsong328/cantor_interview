@@ -1,0 +1,6 @@
+Column,Description
+ID_BB_GLOBAL,Unique Securiti
+FIELD,Field Name from input DataFrame
+VALUE,Field Value from input DataFrame
+SOURCE,Input File name:  corp_pdf.diff
+TSTAMP,Date/Time when result was processed
