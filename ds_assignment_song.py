@@ -8,11 +8,25 @@ Created on Sun May 16 14:54:33 2021
 import pandas as pd
 
 
+def timestamp_mapping(year, month, day, time):
+    year = str(year)
+    month_mapper = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6,
+                    'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10, 'Nov': 11, 'Dec': 12}
+    month = month_mapper[month]
+    day = str(day)
+
+    return pd.to_datetime('{year}-{month}-{day} {time}'.format(year=year,
+                                                               month=month,
+                                                               day=day,
+                                                               time=time))
+    
+    
 path = r"C:\Users\songw\Downloads\DS Assigment\\"
 
 # load input file
 data_raw = ""
-with open(path + "corp_pfd.dif") as f:
+input_name = "corp_pfd.dif"
+with open(path + input_name) as f:
     data_raw = f.readlines()
 
 # 0. clean input texts by taking out new lines, # with a space, and empty lines
@@ -68,14 +82,16 @@ new_secs.columns = new_secs.columns.str.lower()
 new_ref_secs = new_secs[ref_secs.columns]
 
 # 6. create Field-Value reference
-new_secs_mapping = {'Column': ['ID_BB_GLOBAL', 'FIELD', 'VALUE', 'SOURCE', 'TSTAMP',],
-                    'Description': ['Unique Securiti', 'Field Name from input DataFrame',
-                                    'Field Value from input DataFrame',
-                                    'Input File name:  corp_pdf.diff',
-                                    'Date/Time when result was processed']}
-
-sec_data = pd.DataFrame(new_secs_mapping, index=range(len(new_secs_mapping['Column'])))
+# each security should have 50 - 1 = 49 rows because data has 49 non-id fields
+value_vars = [x for x in df.columns if (x != 'ID_BB_GLOBAL')]
+sec_data = df.melt(id_vars=['ID_BB_GLOBAL'], value_vars=value_vars,
+                   var_name='FIELD', value_name='VALUE')
+sec_data['SOURCE'] = input_name
+tstamp_row = [i for i, _ in enumerate(data_raw) if 'TIMEFINISHED' in _][0]
+tstamp_row_token = data_raw[tstamp_row].split(' ')
+year, month, day, time = tstamp_row_token[-1], tstamp_row_token[1], tstamp_row_token[3], tstamp_row_token[4]
+sec_data['TSTAMP'] = timestamp_mapping(year, month, day, time)
 
 # 7. save the 2 output tables
-new_ref_secs.to_csv(path + "new_securities_test.csv", index=False)
-sec_data.to_csv(path + "security_data_test.csv", index=False)
+new_ref_secs.to_csv(path + "new_securities.csv", index=False)
+sec_data.to_csv(path + "security_data.csv", index=False)
